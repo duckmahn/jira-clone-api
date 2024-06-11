@@ -45,7 +45,7 @@ namespace project.Controllers
             }
 
             var token = _tokenService.CreateToken(user);
-            /*string token = (user);*/
+           
 
             return Ok(token);
         }
@@ -110,28 +110,6 @@ namespace project.Controllers
         }
 
 
-        /*private string CreateToken(User user)
-        {
-            
-            List<Claim> claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Username),
-               
-            };
-
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
-                configuration.GetSection("AppSettings:Token").Value));
-
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
-
-            var token = new JwtSecurityToken(
-                claims: claims,
-                expires: DateTime.Now.AddDays(1),
-                signingCredentials: creds);
-
-            var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return jwt;
-        }*/
     }
 }
 //enable-migration
