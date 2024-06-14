@@ -1,4 +1,5 @@
 ﻿using managementapp.Data;
+using managementapp.Data.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -31,7 +32,7 @@ namespace managementapp
         [HttpPost("Login")]
         public async Task<ActionResult<List<UserLogin>>> Login(DTOLogin request)
         {
-            var user = await _context.UserLogins.SingleOrDefaultAsync(u => u.Username == request.Username);
+            var user = await _context.UserLogins.FindAsync(request.Username);
             if (user == null)
             {
                 return Unauthorized();
@@ -50,20 +51,19 @@ namespace managementapp
         public async Task<ActionResult<List<UserLogin>>> AddUser(UserDTO userDTO)
 
         {
-            var user = new UserLogin
+            var user = new Users
             {
                 Username = userDTO.Username,
                 Firstname = userDTO.Firstname,
                 Lastname = userDTO.Lastname,
                 Email = userDTO.Email,
-                Password = userDTO.Password,
+                
 
             };
-            _context.UserLogins.Add(user);
-
+            _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            var token = _tokenService.CreateToken(user);
-            return Ok(token);
+            //var token = _tokenService.CreateToken(user);
+            return Ok(user);
         }
         
         [HttpGet]
@@ -74,10 +74,10 @@ namespace managementapp
         }
        /* [Authorize]*/
         [HttpPut("UpdateUser"),Authorize]
-        public async Task<ActionResult<List<UserLogin>>> UpdatedUser(DTOupdate updatedUser)
+        public async Task<ActionResult<List<Users>>> UpdatedUser(DTOupdate updatedUser)
         {
             
-            var user = await _context.UserLogins.FindAsync(updatedUser.Id);
+            var user = await _context.Users.FindAsync(updatedUser.Id);
             if(user == null)
             {
                 return NotFound();
@@ -87,7 +87,6 @@ namespace managementapp
             user.Email = updatedUser.Email;
             user.Firstname = updatedUser.Firstname;
             user.Lastname = updatedUser.Lastname;
-            user.Password = updatedUser.Password;
 
             await _context.SaveChangesAsync();
             return Ok(await _context.Users.ToListAsync());

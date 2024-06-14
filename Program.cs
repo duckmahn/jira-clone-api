@@ -25,8 +25,9 @@ namespace managementapp
             
             builder.Services.AddControllers();
             builder.Services.AddSingleton(Configuration);
-            
+
             builder.Services.AddSignalR();
+
             builder.Services.AddScoped<DbContext, DataContext>();
             builder.Services.AddScoped<ITokenService, TokenService>();
 
@@ -36,12 +37,13 @@ namespace managementapp
             });
             builder.Services.AddCors(options =>
             {
-                options.AddPolicy("CorsPolicy", builder =>
-                {
-                    builder.AllowAnyOrigin()
-                            .AllowAnyMethod()
-                            .AllowAnyHeader();
-                });
+                //options.AddPolicy("CorsPolicy", builder =>
+                //{
+                //    builder.AllowAnyOrigin()
+                //            .AllowAnyMethod()
+                //            .AllowAnyHeader()
+                //            .AllowCredentials();
+                //});
                 options.AddPolicy("SignalRCorsPolicy", builder =>
                 {
                     builder.WithOrigins("http://localhost:3000")
@@ -94,8 +96,9 @@ namespace managementapp
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            //app.UseCors("CorsPolicy");
+            app.UseCors("CorsPolicy");
             app.UseCors("SignalRCorsPolicy");
+
             app.UseHttpsRedirection();
 
             app.UseAuthorization();

@@ -11,7 +11,7 @@ using System.Security.Claims;
 
 namespace managementapp.Controllers
 {
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class MessagesController : ControllerBase

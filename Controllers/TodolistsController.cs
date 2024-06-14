@@ -49,7 +49,7 @@ public class TodolistsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTodolist(int id, Todolist todolist)
+    public async Task<IActionResult> PutTodolist(Guid id, Todolist todolist)
     {
         if (id != todolist.Id)
         {
@@ -89,10 +89,9 @@ public class TodolistsController : ControllerBase
         {
             Title = todolist.Title,
             Description = todolist.Description,
-            IsCompleted = todolist.IsCompleted,
+            Status = todolist.Status,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now,
-            UserId = todolist.UserId
         });
         await _context.SaveChangesAsync();
 
@@ -118,7 +117,7 @@ public class TodolistsController : ControllerBase
         return NoContent();
     }
 
-    private bool TodolistExists(int id)
+    private bool TodolistExists(Guid id)
     {
         return (_context.Todolists?.Any(e => e.Id == id)).GetValueOrDefault();
     }
