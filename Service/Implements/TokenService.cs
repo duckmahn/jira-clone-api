@@ -1,4 +1,5 @@
-﻿using managementapp.Data.Models;
+﻿using managementapp.Data;
+using managementapp.Data.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -8,18 +9,26 @@ namespace managementapp
     public class TokenService : ITokenService
     {
 
+        private readonly DataContext _context;
         private readonly IConfiguration _configuration;
+        
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IConfiguration configuration, DataContext context)
         {
+            _context = context;
             _configuration = configuration;
         }
 
         public string CreateToken(UserLogin user)
         {
+            var users = _context.Users.SingleOrDefault(u => u.Email == user.Email);
             List<Claim> claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Email, user.Email),
+
+            new Claim("Id",user.Id.ToString()),         
+            new Claim("Email address",user.Email),
+            new Claim("Username",users.Firstname + " "+users.Lastname),
+          
         };
 
             var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(
