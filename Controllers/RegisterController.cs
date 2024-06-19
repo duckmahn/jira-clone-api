@@ -16,17 +16,11 @@ namespace managementapp.Controllers
             _context = context;
             _tokenService = tokenService;
         }
+      
         [HttpPost("Login")]
         public async Task<ActionResult<List<UserLogin>>> Login(DTOLogin request)
         {
-            var user =  await _context.UserLogins.SingleOrDefaultAsync(u => u.Email==request.Email);
-           
-            
-            if (user == null)
-            {
-                return NotFound();
-            }
-
+            var user = Authentication(request);            
             var token = _tokenService.CreateToken(user);
             return Ok(token);
                     
@@ -59,6 +53,18 @@ namespace managementapp.Controllers
             await _context.SaveChangesAsync();
             //var token = _tokenService.CreateToken(user);
             return Ok(user);
+        }
+        public UserLogin Authentication(DTOLogin request)
+        {
+            var user = _context.UserLogins.SingleOrDefault(u => u.Email == request.Email && u.Password == request.Password);
+            if (user == null)
+            {
+                return null;
+            }
+            else
+            {
+                return user;
+            }
         }
     }
 }
