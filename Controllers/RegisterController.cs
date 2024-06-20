@@ -30,7 +30,7 @@ namespace managementapp.Controllers
                     
         }
         [HttpPost("Register")]
-        public async Task<ActionResult<List<UserLogin>>> AddUser(UserDTO userDTO)
+        public async Task<ActionResult<List<UserLogin>>> Register(UserDTO userDTO)
         {
             var existingUser = await _context.UserLogins.SingleOrDefaultAsync(u => u.Email == userDTO.Email);
 
