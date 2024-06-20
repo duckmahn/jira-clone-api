@@ -20,7 +20,11 @@ namespace managementapp.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult<List<UserLogin>>> Login(DTOLogin request)
         {
-            var user = Authentication(request);            
+            var user = Authentication(request);
+            if (user == null)
+            {
+                return NotFound();
+            }
             var token = _tokenService.CreateToken(user);
             return Ok(token);
                     
