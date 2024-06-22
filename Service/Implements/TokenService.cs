@@ -26,7 +26,7 @@ namespace managementapp
         {
 
             new Claim("Id",user.Id.ToString()),         
-            new Claim("Email address",user.Email),
+            new Claim("Email",user.Email),
             new Claim("Username",users.Firstname + " "+users.Lastname),
           
         };

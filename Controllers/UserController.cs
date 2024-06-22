@@ -1,15 +1,8 @@
 ﻿using managementapp.Data;
 using managementapp.Data.Models;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
 
 namespace managementapp
@@ -17,12 +10,10 @@ namespace managementapp
 
     [Route("api/[controller]")]
     [ApiController]
-
+    [Authorize]
     public class UserController : ControllerBase
-    {//Thêm xóa sửa 
+    {
         private readonly DataContext _context;
-
-
         public UserController(DataContext context, ITokenService tokenService)
         {
             _context = context;
@@ -30,12 +21,29 @@ namespace managementapp
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<UserLogin>>> GetAllUser()
+        public async Task<ActionResult<List<Users>>> GetAllUser()
         {
             var users = await _context.Users.ToListAsync();
             return Ok(users);
         }
-       /* [Authorize]*/
+        [HttpPost("addUser")]
+        public async Task<ActionResult<List<Users>>> AddUser(Users user)
+        {
+            var newUser = new Users
+            {
+                Id = Guid.NewGuid(),
+                Username = user.Username,
+                Email = user.Email,
+                Firstname = user.Firstname,
+                Lastname = user.Lastname,
+                Avatar = user.Avatar,
+                Phone = user.Phone,
+                Password = user.Password
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            return Ok( _context.Users.FindAsync(newUser.Id));
+        }
         [HttpPut("UpdateUser"),Authorize]
         public async Task<ActionResult<List<Users>>> UpdatedUser(DTOupdate updatedUser)
         {
@@ -52,10 +60,10 @@ namespace managementapp
             user.Lastname = updatedUser.Lastname;
 
             await _context.SaveChangesAsync();
-            return Ok(await _context.Users.ToListAsync());
+            return Ok(await _context.Users.FindAsync(user.Id));
         }
         [HttpDelete("DeleteUser"),Authorize]
-        public async Task<ActionResult<List<UserLogin>>> RemoveUser (int id )
+        public async Task<ActionResult<List<Users>>> RemoveUser (int id )
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) {
@@ -63,9 +71,7 @@ namespace managementapp
             }
             _context.Users.Remove(user);
             _context.SaveChanges();
-            return Ok(await _context.Users.ToListAsync());
+            return NoContent();
         }
-
-
     }
 }

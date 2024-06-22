@@ -14,6 +14,8 @@ public class DataContext : DbContext
     public DbSet<Users>? Users { get; set; }
     public DbSet<Message>? Messages { get; set; }
     public DbSet<UserLogin>? UserLogins { get; set; }
+    public DbSet<Project>? Projects { get; set; }
+
     public DataContext(DbContextOptions<DataContext> options) : base(options)
     {
 
@@ -24,7 +26,11 @@ public class DataContext : DbContext
         modelBuilder.Entity<Users>().HasKey(users => users.Id);
         modelBuilder.Entity<Message>().HasKey(messages => messages.Id);
         modelBuilder.Entity<UserLogin>().HasKey(userlogins => userlogins.Id);
-
+        modelBuilder.Entity<Project>().HasKey(projects => projects.Id);
+        modelBuilder.Entity<Project>()
+           .HasMany(project => project.Todolists)
+           .WithOne(todolist => todolist.Project) 
+           .HasForeignKey(todolist => todolist.ProjectId);
         base.OnModelCreating(modelBuilder);
     }
 

@@ -1,9 +1,11 @@
 ﻿using managementapp.Data;
 using managementapp.Data.DTO;
 using managementapp.Data.Models;
+using managementapp.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace managementapp.Controllers;
 
@@ -13,10 +15,12 @@ namespace managementapp.Controllers;
 public class TodolistsController : ControllerBase
 {
     private readonly DataContext _context;
+    private readonly IDataService _dataService;
 
-    public TodolistsController(DataContext context)
+    public TodolistsController(DataContext context, IDataService data)
     {
         _context = context;
+        _dataService = data;
     }
 
     // GET: api/Todolists
@@ -80,22 +84,31 @@ public class TodolistsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Todolist>> PostTodolist(TodoDTO todolist)
     {
-        if (_context.Todolists == null)
+        string token = HttpContext.Request.Headers["Authorization"];
+        if (string.IsNullOrEmpty(token))
         {
-            return Problem("Entity set 'Dbcontext.Todolists'  is null.");
+            // Handle the case where the token is null or empty
+            return Unauthorized(); // Or another appropriate action
         }
+        Token tokenData = _dataService.DeToken(token);
 
-        _context.Todolists.Add(new Todolist
+        Guid userId = Guid.Parse(tokenData.Id.ToString());
+
+        var newTodo = new Todolist
         {
+            Id = Guid.NewGuid(),
             Title = todolist.Title,
             Description = todolist.Description,
             Status = todolist.Status,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now,
-        });
+            UserId = userId,
+            ProjectId = todolist.ProjectId
+        };
+        await _context.AddAsync(newTodo);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetTodolist", todolist);
+        return Ok(newTodo.Id);
     }
 
     [HttpDelete("{id}")]

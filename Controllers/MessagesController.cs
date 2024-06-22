@@ -14,6 +14,7 @@ namespace managementapp.Controllers
     //[Authorize]
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MessagesController : ControllerBase
     {
         private readonly DataContext _context;
@@ -58,10 +59,11 @@ namespace managementapp.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromBody] MessageDTO messageDTO)
         {
-            //var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var currentUserId = Guid.NewGuid();
-            var recieverId = Guid.NewGuid();
-            
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var recieverId = messageDTO.RecieverId;
+            Guid.TryParse(currentUserId, out Guid currentUserIdGuid);
+            Guid.TryParse(recieverId, out Guid recieverGuid);
+
             if (_context.Messages == null)
             {
                 return Problem("Entity set 'DataContext.Message'  is null.");
@@ -71,12 +73,12 @@ namespace managementapp.Controllers
                 Id = Guid.NewGuid(),
                 MessageText = messageDTO.MessageText,
                 TimeStamp = DateTime.Now,
-                SenderId = currentUserId,
-                RecieverId = recieverId,
+                SenderId = currentUserIdGuid,
+                RecieverId = recieverGuid,
             };
 
-            //_context.Message.Add(chatMessage);
-            //await _context.SaveChangesAsync();
+            _context.Messages.Add(chatMessage);
+            await _context.SaveChangesAsync();
             await _hubContext.Clients.All.SendAsync("ReceiveMessage", chatMessage);
 
             return Ok( chatMessage );
