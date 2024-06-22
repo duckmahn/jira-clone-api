@@ -1,6 +1,9 @@
 using managementapp.Data;
 using managementapp.Hubs;
+using managementapp.Service.Implements;
+using managementapp.Service.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -21,15 +24,22 @@ namespace managementapp
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddAuthorization();
-            
-            builder.Services.AddControllers();
+            builder.Services.AddAuthorization( authen =>
+            {
+
+            });
+
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+            });
             builder.Services.AddSingleton(Configuration);
 
-            builder.Services.AddSignalR();
+            builder.Services.AddSignalR().AddMessagePackProtocol();
 
             builder.Services.AddScoped<DbContext, DataContext>();
             builder.Services.AddScoped<ITokenService, TokenService>();
+            builder.Services.AddScoped<IDataService, DataService>();
 
             builder.Services.AddDbContext<DataContext>(options =>
             {
@@ -65,7 +75,12 @@ namespace managementapp
                 });
                 options.OperationFilter<SecurityRequirementsOperationFilter>();
             });
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            
+            })
                 .AddJwtBearer(options =>
                 {
                     options.TokenValidationParameters = new TokenValidationParameters
@@ -81,9 +96,7 @@ namespace managementapp
 
                 });
 
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            //builder.Services.AddSwaggerGen();
 
             builder.Services.AddSingleton<ShareDb>();
 
@@ -101,9 +114,16 @@ namespace managementapp
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapHub<SignalHub>("/signalHub");
+            app.MapHub<SignalHub>("/signalHub", options =>
+            {
+                options.Transports =
+                    HttpTransportType.WebSockets |
+                    HttpTransportType.LongPolling;
+
+            });
 
 
             app.MapControllers();

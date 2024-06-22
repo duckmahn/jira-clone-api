@@ -9,4 +9,7 @@ public class Todolist
     public DateTime CreatedAt { get; set; }//hidden
     public DateTime UpdatedAt { get; set; }
     public Guid UserId { get; set; }
+
+    public Guid ProjectId { get; set; }
+    public Project Project { get; set; }    
 }

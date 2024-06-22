@@ -40,23 +40,25 @@ namespace managementapp.Controllers
             }
             var user = new Users
             {
+                Id = Guid.NewGuid(),
                 Username = userDTO.Username,
                 Firstname = userDTO.Firstname,
                 Lastname = userDTO.Lastname,
                 Email = userDTO.Email,
-
-
+                Password = userDTO.Password
             };
             var userLogin = new UserLogin
             {
+                Id = user.Id,
                 Email = userDTO.Email,
                 Password = userDTO.Password,
             };
-            _context.UserLogins.Add(userLogin);
+             _context.UserLogins.Add(userLogin);
+            var createToken = await _context.UserLogins.FindAsync(userLogin.Id);
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            //var token = _tokenService.CreateToken(user);
-            return Ok(user);
+            var token = _tokenService.CreateToken(createToken);
+            return Ok(token);
         }
         public UserLogin Authentication(DTOLogin request)
         {
