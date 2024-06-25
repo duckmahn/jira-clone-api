@@ -103,7 +103,8 @@ public class TodolistsController : ControllerBase
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now,
             UserId = userId,
-            ProjectId = todolist.ProjectId
+            ProjectId = todolist.ProjectId,
+            ExpiredAt = todolist.ExpiredAt
         };
         await _context.AddAsync(newTodo);
         await _context.SaveChangesAsync();
