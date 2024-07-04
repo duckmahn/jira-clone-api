@@ -36,7 +36,7 @@ public class TodolistsController : ControllerBase
 
     // GET: api/Todolists/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<Todolist>> GetTodolist(int id)
+    public async Task<ActionResult<Todolist>> GetTodolist(Guid id)
     {
         if (_context.Todolists == null)
         {
@@ -113,7 +113,7 @@ public class TodolistsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTodolist(int id)
+    public async Task<IActionResult> DeleteTodolist(Guid id)
     {
         if (_context.Todolists == null)
         {

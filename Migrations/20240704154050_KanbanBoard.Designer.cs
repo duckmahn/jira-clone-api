@@ -12,8 +12,8 @@ using managementapp.Data;
 namespace managementapp.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240620161757_Project_injection")]
-    partial class Project_injection
+    [Migration("20240704154050_KanbanBoard")]
+    partial class KanbanBoard
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -23,6 +23,30 @@ namespace managementapp.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder, 1L, 1);
+
+            modelBuilder.Entity("managementapp.Data.Models.Kanban", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("StatusList")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Kanbans");
+                });
 
             modelBuilder.Entity("managementapp.Data.Models.Message", b =>
                 {
@@ -57,12 +81,30 @@ namespace managementapp.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("AdminId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("managementapp.Data.Models.ProjectUser", b =>
+                {
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ProjectId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ProjectUsers");
                 });
 
             modelBuilder.Entity("managementapp.Data.Models.Todolist", b =>
@@ -77,11 +119,16 @@ namespace managementapp.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("ExpiredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("KanbanId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Status")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
@@ -94,6 +141,8 @@ namespace managementapp.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("KanbanId");
 
                     b.HasIndex("ProjectId");
 
@@ -154,18 +203,64 @@ namespace managementapp.Migrations
                     b.ToTable("UserLogins");
                 });
 
-            modelBuilder.Entity("managementapp.Data.Models.Todolist", b =>
+            modelBuilder.Entity("managementapp.Data.Models.Kanban", b =>
                 {
                     b.HasOne("managementapp.Data.Models.Project", null)
-                        .WithMany("Todolists")
+                        .WithMany("Kanbans")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("managementapp.Data.Models.Project", b =>
+            modelBuilder.Entity("managementapp.Data.Models.ProjectUser", b =>
+                {
+                    b.HasOne("managementapp.Data.Models.Project", "Project")
+                        .WithMany("ProjectUsers")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("managementapp.Data.Models.Users", "User")
+                        .WithMany("ProjectUsers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("managementapp.Data.Models.Todolist", b =>
+                {
+                    b.HasOne("managementapp.Data.Models.Kanban", null)
+                        .WithMany("Todolists")
+                        .HasForeignKey("KanbanId");
+
+                    b.HasOne("managementapp.Data.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("managementapp.Data.Models.Kanban", b =>
                 {
                     b.Navigation("Todolists");
+                });
+
+            modelBuilder.Entity("managementapp.Data.Models.Project", b =>
+                {
+                    b.Navigation("Kanbans");
+
+                    b.Navigation("ProjectUsers");
+                });
+
+            modelBuilder.Entity("managementapp.Data.Models.Users", b =>
+                {
+                    b.Navigation("ProjectUsers");
                 });
 #pragma warning restore 612, 618
         }

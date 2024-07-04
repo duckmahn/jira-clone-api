@@ -1,5 +1,7 @@
-﻿using managementapp.Data;
+﻿using Google.Cloud.Storage.V1;
+using managementapp.Data;
 using managementapp.Data.Models;
+using managementapp.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +16,12 @@ namespace managementapp
     public class UserController : ControllerBase
     {
         private readonly DataContext _context;
-        public UserController(DataContext context, ITokenService tokenService)
+        private readonly IDataService _dataService;
+
+        public UserController(DataContext context, IDataService dataService)
         {
             _context = context;
-           
+            _dataService = dataService;
         }
 
         [HttpGet]
@@ -43,6 +47,41 @@ namespace managementapp
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return Ok( _context.Users.FindAsync(newUser.Id));
+        }
+        [HttpPost("UploadImage")]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded.");
+            }
+
+            string userId = _dataService.GetTokenData().Id.ToString();
+
+            var bucketName = "jira-clone";
+            var storage = StorageClient.Create();
+            var filename = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{file.FileName}";
+            var contentType = file.ContentType;
+
+            using (var stream = file.OpenReadStream())
+            {
+                await storage.UploadObjectAsync(bucketName, filename, contentType, stream);
+            }
+
+            var publicUrl = $"https://storage.googleapis.com/{bucketName}/{filename}";
+
+            // Assuming you have a method to update the user's image URL in your user management system
+            var user = await _context.Users.FindAsync(new Guid(userId));
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            user.Avatar = publicUrl;
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Url = publicUrl });
         }
         [HttpPut("UpdateUser"),Authorize]
         public async Task<ActionResult<List<Users>>> UpdatedUser(DTOupdate updatedUser)
