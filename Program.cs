@@ -1,9 +1,7 @@
 using managementapp.Data;
-using managementapp.Hubs;
 using managementapp.Service.Implements;
 using managementapp.Service.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -41,7 +39,7 @@ namespace managementapp
 
             builder.Services.AddSingleton(Configuration);
 
-            builder.Services.AddSignalR().AddMessagePackProtocol();
+            //builder.Services.AddSignalR().AddMessagePackProtocol();
 
             builder.Services.AddScoped<DbContext, DataContext>();
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -51,23 +49,23 @@ namespace managementapp
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
             });
-            builder.Services.AddCors(options =>
-            {
-                //options.AddPolicy("CorsPolicy", builder =>
-                //{
-                //    builder.AllowAnyOrigin()
-                //            .AllowAnyMethod()
-                //            .AllowAnyHeader()
-                //            .AllowCredentials();
-                //});
-                options.AddPolicy("SignalRCorsPolicy", builder =>
-                {
-                    builder.WithOrigins("http://localhost:3000")
-                            .AllowAnyHeader()
-                            .AllowAnyMethod()
-                            .AllowCredentials();
-                });
-            });
+            //builder.Services.AddCors(options =>
+            //{
+            //    //options.AddPolicy("CorsPolicy", builder =>
+            //    //{
+            //    //    builder.AllowAnyOrigin()
+            //    //            .AllowAnyMethod()
+            //    //            .AllowAnyHeader()
+            //    //            .AllowCredentials();
+            //    //});
+            //    options.AddPolicy("SignalRCorsPolicy", builder =>
+            //    {
+            //        builder.WithOrigins("http://localhost:3000")
+            //                .AllowAnyHeader()
+            //                .AllowAnyMethod()
+            //                .AllowCredentials();
+            //    });
+            //});
             builder.Services.AddSwaggerGen(options =>
             {
                 options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
@@ -115,25 +113,24 @@ namespace managementapp
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            app.UseCors("CorsPolicy");
-            app.UseCors("SignalRCorsPolicy");
+            //app.UseCors("CorsPolicy");
+            //app.UseCors("SignalRCorsPolicy");
 
             app.UseHttpsRedirection();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapHub<SignalHub>("/signalHub", options =>
-            {
-                options.Transports =
-                    HttpTransportType.WebSockets |
-                    HttpTransportType.LongPolling;
+            //app.MapHub<SignalHub>("/signalHub", options =>
+            //{
+            //    options.Transports =
+            //        HttpTransportType.WebSockets |
+            //        HttpTransportType.LongPolling;
 
-            });
+            //});
 
 
             app.MapControllers();
-
 
             app.Run();
         }
