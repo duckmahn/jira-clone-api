@@ -4,7 +4,9 @@ using managementapp.Data.Models;
 using managementapp.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Versioning;
 using System.Security.Claims;
 
 namespace managementapp.Controllers;
@@ -34,6 +36,16 @@ public class TodolistsController : ControllerBase
         return await _context.Todolists.ToListAsync();
     }
 
+    [HttpGet("project/{projectId}")]
+    public async Task<ActionResult<IEnumerable<Todolist>>> GetTodolistsByProjectId(Guid projectId)
+    {
+        if (_context.Todolists == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(await _context.Todolists.Where(x => x.ProjectId == projectId).ToListAsync());
+    }
     // GET: api/Todolists/5
     [HttpGet("{id}")]
     public async Task<ActionResult<Todolist>> GetTodolist(Guid id)
@@ -53,13 +65,24 @@ public class TodolistsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTodolist(Guid id, Todolist todolist)
+    public async Task<IActionResult> PutTodolist(Guid id, TodoDTO todolist)
     {
-        if (id != todolist.Id)
+        var todo = await _context.Todolists.FindAsync(id);
+        Todolist putTodo = new Todolist
         {
-            return BadRequest();
-        }
-
+            Id = id,
+            Title = todolist.Title,
+            Description = todolist.Description,
+            Status = 1,
+            CreatedAt = todo.CreatedAt,
+            UpdatedAt = DateTime.Now,
+            UserId = todo.UserId,
+            ProjectId = todo.ProjectId,
+            StatusName = _context.Kanbans
+                .Where(k => k.ProjectId == todo.ProjectId && k.Status == 1)
+                .FirstOrDefault().ToString(),
+            ExpiredAt = todolist.ExpiredAt
+        };
         _context.Entry(todolist).State = EntityState.Modified;
 
         try
@@ -81,37 +104,125 @@ public class TodolistsController : ControllerBase
         return NoContent();
     }
 
-    [HttpPost]
-    public async Task<ActionResult<Todolist>> PostTodolist(TodoDTO todolist)
+    [HttpPut("{id}/UpdateStatus")]
+    public async Task<IActionResult> UpdateStatus(Guid id, int status)
     {
-        string token = HttpContext.Request.Headers["Authorization"];
-        if (string.IsNullOrEmpty(token))
+        var todo = await _context.Todolists.FindAsync(id);
+        if (todo == null)
         {
-            // Handle the case where the token is null or empty
-            return Unauthorized(); // Or another appropriate action
+            return NotFound();
         }
-        Token tokenData = _dataService.DeToken(token);
 
-        Guid userId = Guid.Parse(tokenData.Id.ToString());
+        var kanban = await _context.Kanbans
+            .Where(k => k.ProjectId == todo.ProjectId && k.Status == status)
+            .FirstOrDefaultAsync();
+
+        if (kanban == null)
+        {
+            return NotFound("Kanban status not found for the project");
+        }
+
+        todo.Status = status;
+        todo.StatusName = kanban.StatusName;
+        todo.UpdatedAt = DateTime.Now;
+
+        _context.Entry(todo).State = EntityState.Modified;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!TodolistExists(id))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        return NoContent();
+    }
+    #region Postnormal
+    //[HttpPost]
+    //public async Task<ActionResult<Todolist>> PostTodolist(TodoDTO todolist)
+    //{
+    //    string token = HttpContext.Request.Headers["Authorization"];
+    //    if (string.IsNullOrEmpty(token))
+    //    {
+    //        // Handle the case where the token is null or empty
+    //        return Unauthorized(); // Or another appropriate action
+    //    }
+    //    Token tokenData = _dataService.DeToken(token);
+
+    //    Guid userId = Guid.Parse(tokenData.Id.ToString());
+
+    //var newTodo = new Todolist
+    //{
+    //    Id = Guid.NewGuid(),
+    //    Title = todolist.Title,
+    //    Description = todolist.Description,
+    //    Status = 1,
+
+    //    CreatedAt = DateTime.Now,
+    //    UpdatedAt = DateTime.Now,
+    //    UserId = userId,
+    //    ProjectId = todolist.ProjectId,
+    //    StatusName = _context.Kanbans
+    //        .Where(k => k.ProjectId == todolist.ProjectId && k.Status == 1)
+    //        .FirstOrDefault().ToString(),
+    //    ExpiredAt = todolist.ExpiredAt
+    //};
+    //    await _context.AddAsync(newTodo);
+    //    await _context.SaveChangesAsync();
+
+    //    return Ok(newTodo.Id);
+    //}
+    #endregion
+
+    [HttpPost("{projectId}/AddTodolist")]
+    public async Task<ActionResult<Todolist>> AddTodolist(Guid projectId, TodoDTO todolist)
+    {
+        // Check if the project exists
+        var projectExists = await _context.Projects.AnyAsync(p => p.Id == projectId);
+        if (!projectExists)
+        {
+            return NotFound("Project not found");
+        }
+
+        // Fetch the default Kanban status for the project
+        var defaultKanban = await _context.Kanbans
+            .Where(k => k.ProjectId == projectId && k.Status == 1)
+            .FirstOrDefaultAsync();
+
+        if (defaultKanban == null)
+        {
+            return NotFound("Default Kanban status not found for the project");
+        }
 
         var newTodo = new Todolist
         {
             Id = Guid.NewGuid(),
             Title = todolist.Title,
             Description = todolist.Description,
-            Status = todolist.Status,
+            Status = defaultKanban.Status,
+            StatusName = defaultKanban.StatusName,
             CreatedAt = DateTime.Now,
             UpdatedAt = DateTime.Now,
-            UserId = userId,
-            ProjectId = todolist.ProjectId,
+            UserId = todolist.userId,
+            ProjectId = projectId,
             ExpiredAt = todolist.ExpiredAt
         };
-        await _context.AddAsync(newTodo);
+
+        // Add the new Todolist to the context and save changes
+        _context.Todolists.Add(newTodo);
         await _context.SaveChangesAsync();
 
-        return Ok(newTodo.Id);
+        return CreatedAtAction(nameof(AddTodolist), new { id = newTodo.Id }, newTodo);
     }
-
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTodolist(Guid id)
     {

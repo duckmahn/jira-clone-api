@@ -17,7 +17,7 @@ public class DataContext : DbContext
     public DbSet<ProjectUser> ProjectUsers { get; set; }
     public DbSet<Kanban> Kanbans { get; set; }
 
-   
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ProjectUser>()
@@ -31,6 +31,8 @@ public class DataContext : DbContext
             .WithMany(p => p.ProjectUsers)
             .HasForeignKey(pu => pu.UserId);
 
+        modelBuilder.Entity<Kanban>()
+            .HasKey(t => t.Id);
     }
 
 }

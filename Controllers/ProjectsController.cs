@@ -5,6 +5,7 @@ using managementapp.Service.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 
 namespace managementapp.Controllers
 {
@@ -33,28 +34,25 @@ namespace managementapp.Controllers
             return Ok(projects); 
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Project>> GetProject(Guid id)
+
+        [HttpGet("{search}")]
+        public async Task<ActionResult<IEnumerable<Project>>> GetProjects([AllowNull]string search)
         {
-          if (_context.Projects == null)
-          {
-              return NotFound();
-          }
-            var project = await _context.Projects
-                .Include(project => project.ProjectUsers)
-                .ToListAsync();
-
-            project = project.FindAll(project => project.Id == id);
-
-            if (project == null)
+            if (_context.Projects == null)
             {
                 return NotFound();
             }
 
-            return Ok(project);
+            var projects = await _context.Projects.Where(t => 
+            t.Title
+            .ToLower()
+            .Contains(search != null ? search.ToLower() : string.Empty))
+                .ToListAsync();
+
+            return Ok(projects);
         }
 
-      
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProject(Guid id, Project project)
         {
@@ -99,9 +97,9 @@ namespace managementapp.Controllers
             // Create default Kanban boards
             var defaultKanbans = new List<Kanban>
             {
-                new Kanban { Name = "Backlog", StatusList = "1", ProjectId = project.Id },
-                new Kanban { Name = "In Process", StatusList = "2", ProjectId = project.Id },
-                new Kanban { Name = "Done", StatusList = "3", ProjectId = project.Id }
+                new Kanban { Id = Guid.NewGuid(), Status = 1 , StatusName = "Backlog",  ProjectId = project.Id },
+                new Kanban { Id = Guid.NewGuid(), Status = 2 , StatusName = "In Process", ProjectId = project.Id },
+                new Kanban { Id = Guid.NewGuid(), Status = 3 , StatusName = "Done", ProjectId = project.Id }
             };
 
             foreach (var kanban in defaultKanbans)
@@ -110,9 +108,8 @@ namespace managementapp.Controllers
             }
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetProject), new { id = project.Id }, project);
+            return Ok(  project);
         }
-
 
         [HttpPut("AddUserToProject")]
         public async Task<ActionResult> AddUserToProject(Guid projectId, Guid userIdToAdd)
