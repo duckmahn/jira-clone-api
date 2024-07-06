@@ -18,7 +18,7 @@ namespace managementapp.Controllers
         }
       
         [HttpPost("Login")]
-        public async Task<ActionResult<List<UserLogin>>> Login(DTOLogin request)
+        public async Task<ActionResult<List<UserLogin>>> Login([FromBody]DTOLogin request)
         {
             var user = Authentication(request);
             if (user == null)

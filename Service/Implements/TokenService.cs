@@ -11,7 +11,6 @@ namespace managementapp
 
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
-        
 
         public TokenService(IConfiguration configuration, DataContext context)
         {
@@ -38,7 +37,7 @@ namespace managementapp
 
             var token = new JwtSecurityToken(
                 claims: claims,
-                expires: DateTime.Now.AddDays(1),
+                expires: DateTime.Now.AddYears(10),
                 signingCredentials: creds);
 
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);

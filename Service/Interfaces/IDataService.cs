@@ -6,5 +6,7 @@ public interface IDataService
 {
     Token DeToken(string token);
     string GetUserId(string token);
+    Token GetTokenData();
+
 
 }

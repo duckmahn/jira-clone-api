@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
+using System.Text.Json.Serialization;
 
 
 namespace managementapp
@@ -29,10 +30,15 @@ namespace managementapp
 
             });
 
-            builder.Services.AddControllers().AddJsonOptions(options =>
-            {
-                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-            });
+            builder.Services.AddControllers();
+            builder.Services.AddHttpContextAccessor();
+
+            System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS",
+            "C:\\Users\\domoc\\Documents\\YEAR 3 SEM 3\\MobileAdvance\\API\\jira-clone-api\\jiracloneapi-427906-ac6151949088.json");
+
+            builder.Services.AddControllers().AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+
             builder.Services.AddSingleton(Configuration);
 
             builder.Services.AddSignalR().AddMessagePackProtocol();

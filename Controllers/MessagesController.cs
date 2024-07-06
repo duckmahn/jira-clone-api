@@ -1,5 +1,4 @@
-﻿using Humanizer;
-using managementapp.Data;
+﻿using managementapp.Data;
 using managementapp.Data.DTO;
 using managementapp.Data.Models;
 using managementapp.Hubs;
@@ -57,7 +56,7 @@ namespace managementapp.Controllers
         }
 
         [HttpPost("send")]
-        public async Task<IActionResult> SendMessage([FromBody] MessageDTO messageDTO)
+        public async Task<IActionResult> SendMessage( MessageDTO messageDTO)
         {
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var recieverId = messageDTO.RecieverId;
