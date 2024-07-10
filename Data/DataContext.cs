@@ -17,6 +17,11 @@ public class DataContext : DbContext
     public DbSet<ProjectUser> ProjectUsers { get; set; }
     public DbSet<Kanban> Kanbans { get; set; }
 
+    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //{
+    //    optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=PurpleBoard;Trusted_Connection=True;");
+    //}
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

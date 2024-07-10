@@ -8,6 +8,10 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Text;
 using System.Text.Json.Serialization;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using Azure.Identity;
+
 
 
 namespace managementapp
@@ -20,10 +24,12 @@ namespace managementapp
         .Build();
         public static void Main(string[] args)
         {
+           
             var builder = WebApplication.CreateBuilder(args);
+            
 
             // Add services to the container.
-            builder.Services.AddAuthorization( authen =>
+            builder.Services.AddAuthorization(authen =>
             {
 
             });
@@ -38,11 +44,15 @@ namespace managementapp
                 x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
 
             builder.Services.AddSingleton(Configuration);
+            builder.Services.AddSingleton(new BlobServiceClient(
+       new Uri("https://purpleboard.blob.core.windows.net"),
+       new DefaultAzureCredential()));
 
 
             builder.Services.AddScoped<DbContext, DataContext>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IDataService, DataService>();
+            builder.Services.AddScoped<IBlobService, BlobService>();
 
             builder.Services.AddDbContext<DataContext>(options =>
             {
@@ -66,7 +76,7 @@ namespace managementapp
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            
+
             })
                 .AddJwtBearer(options =>
                 {
@@ -86,8 +96,9 @@ namespace managementapp
             builder.Services.AddEndpointsApiExplorer();
 
             builder.Services.AddSingleton<ShareDb>();
+           
 
-            
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -97,7 +108,7 @@ namespace managementapp
                 app.UseSwaggerUI();
             }
 
-            if(app.Environment.IsProduction())
+            if (app.Environment.IsProduction())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();

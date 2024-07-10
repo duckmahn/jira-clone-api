@@ -2,6 +2,7 @@
 using managementapp.Data.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace managementapp.Controllers
 {
@@ -20,6 +21,16 @@ namespace managementapp.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult<List<UserLogin>>> Login([FromBody]DTOLogin request)
         {
+            if (!Regex.IsMatch(request.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                return BadRequest("Invalid email format");
+            }
+
+            if (!Regex.IsMatch(request.Password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$"))
+            {
+                return BadRequest("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
+            }
+
             var user = Authentication(request);
             if (user == null)
             {
@@ -30,8 +41,17 @@ namespace managementapp.Controllers
                     
         }
         [HttpPost("Register")]
-        public async Task<ActionResult<List<UserLogin>>> Register(UserDTO userDTO)
+        public async Task<ActionResult<List<UserLogin>>> Register([FromBody]UserDTO userDTO)
         {
+            if (!Regex.IsMatch(userDTO.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                return BadRequest("Invalid email format");
+            }
+
+            if (!Regex.IsMatch(userDTO.Password, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).+$"))
+            {
+                return BadRequest("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character");
+            }
             var existingUser = await _context.UserLogins.SingleOrDefaultAsync(u => u.Email == userDTO.Email);
 
             if (existingUser != null)

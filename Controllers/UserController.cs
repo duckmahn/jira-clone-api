@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+
+
 
 namespace managementapp
 {
@@ -17,11 +21,13 @@ namespace managementapp
     {
         private readonly DataContext _context;
         private readonly IDataService _dataService;
+        private readonly IBlobService _blobService;
 
-        public UserController(DataContext context, IDataService dataService)
+        public UserController(DataContext context, IDataService dataService, IBlobService blobService)
         {
             _context = context;
             _dataService = dataService;
+            _blobService = blobService;
         }
 
         [HttpGet]
@@ -30,6 +36,37 @@ namespace managementapp
             var users = await _context.Users.ToListAsync();
             return Ok(users);
         }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Users>> GetUserById(Guid id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return Ok(user);
+        }
+
+        [HttpGet("userAvatar")]
+        public async Task<ActionResult<Users>> GetUserAvatar()
+        {
+            var userId = _dataService.GetTokenData().Id;
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            string avatar = user.Avatar;
+
+            if (string.IsNullOrEmpty(user.Avatar))
+            {
+                return NotFound("User avatar not set.");
+            }
+
+            return Ok(avatar);
+        }
+
         [HttpPost("addUser")]
         public async Task<ActionResult<List<Users>>> AddUser(Users user)
         {
@@ -48,6 +85,7 @@ namespace managementapp
             await _context.SaveChangesAsync();
             return Ok( _context.Users.FindAsync(newUser.Id));
         }
+
         [HttpPost("UploadImage")]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
@@ -57,19 +95,8 @@ namespace managementapp
             }
 
             string userId = _dataService.GetTokenData().Id.ToString();
-
-            var bucketName = "jira-clone";
-            var storage = StorageClient.Create();
-            var filename = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{file.FileName}";
-            var contentType = file.ContentType;
-
-            using (var stream = file.OpenReadStream())
-            {
-                await storage.UploadObjectAsync(bucketName, filename, contentType, stream);
-            }
-
-            var publicUrl = $"https://storage.googleapis.com/{bucketName}/{filename}";
-
+            string containerName = "photo"; // Ensure this container exists in your Azure Blob Storage
+            var publicUrl = await _blobService.SaveFile(containerName, file);
             // Assuming you have a method to update the user's image URL in your user management system
             var user = await _context.Users.FindAsync(new Guid(userId));
             if (user == null)
@@ -102,7 +129,7 @@ namespace managementapp
             return Ok(await _context.Users.FindAsync(user.Id));
         }
         [HttpDelete("DeleteUser"),Authorize]
-        public async Task<ActionResult<List<Users>>> RemoveUser (int id )
+        public async Task<ActionResult<List<Users>>> RemoveUser (Guid id )
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) {

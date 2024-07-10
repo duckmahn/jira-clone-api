@@ -54,14 +54,15 @@ namespace managementapp.Controllers
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProject(Guid id, Project project)
+        public async Task<IActionResult> PutProject(Guid id,ProjectDTO projectdto)
         {
-            if (id != project.Id)
+            var project = _context.Projects.FindAsync(id);
+            if (project == null)
             {
-                return BadRequest();
+                return BadRequest("Project not found");
             }
 
-            _context.Entry(project).State = EntityState.Modified;
+            project.Result.Title = projectdto.Title;
 
             try
             {
@@ -79,7 +80,7 @@ namespace managementapp.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(project);
         }
 
         [HttpPost]
