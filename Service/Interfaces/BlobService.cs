@@ -7,11 +7,12 @@ namespace managementapp.Service.Interfaces;
 public class BlobService : IBlobService
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private string _connectionString = "DefaultEndpointsProtocol=https;AccountName=purpleboard;AccountKey=LoUY8l0jEZtW4uPYwIb1IfKJO2wM7YROkfvWlER+ggf1baplxCloXmAOXYxhEipQ4EIRU1kj5I9R+AStSZWrig==;EndpointSuffix=core.windows.net";
+    private readonly string _connectionString;
 
     public BlobService(IHttpContextAccessor httpContextAccessor)
     {
         _httpContextAccessor = httpContextAccessor;
+        _connectionString = Environment.GetEnvironmentVariable("AZURE_STORAGE_CONNECTION_STRING");
     }
     public Task DeleteFile(string containerName, string fileName)
     {
