@@ -110,11 +110,11 @@ namespace managementapp
 
             return Ok(new { Url = publicUrl });
         }
-        [HttpPut("UpdateUser"),Authorize]
-        public async Task<ActionResult<List<Users>>> UpdatedUser(DTOupdate updatedUser)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutUser(Guid id , DTOupdate updatedUser)
         {
             
-            var user = await _context.Users.FindAsync(updatedUser.Id);
+            var user = await _context.Users.FindAsync(id);
             if(user == null)
             {
                 return NotFound();
@@ -124,6 +124,7 @@ namespace managementapp
             user.Email = updatedUser.Email;
             user.Firstname = updatedUser.Firstname;
             user.Lastname = updatedUser.Lastname;
+            user.Password = updatedUser.Password;
 
             await _context.SaveChangesAsync();
             return Ok(await _context.Users.FindAsync(user.Id));

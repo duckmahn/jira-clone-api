@@ -21,7 +21,7 @@ namespace managementapp.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult<List<UserLogin>>> Login([FromBody]DTOLogin request)
         {
-            if (!Regex.IsMatch(request.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            if (!Regex.IsMatch(request.Email, @"^[^@\s]+@[^@\s]+\."))
             {
                 return BadRequest("Invalid email format");
             }
@@ -43,7 +43,7 @@ namespace managementapp.Controllers
         [HttpPost("Register")]
         public async Task<ActionResult<List<UserLogin>>> Register([FromBody]UserDTO userDTO)
         {
-            if (!Regex.IsMatch(userDTO.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            if (!Regex.IsMatch(userDTO.Email, @"^[^@\s]+@[^@\s]+\."))
             {
                 return BadRequest("Invalid email format");
             }

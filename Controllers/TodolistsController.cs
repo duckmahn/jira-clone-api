@@ -27,13 +27,23 @@ public class TodolistsController : ControllerBase
 
     // GET: api/Todolists
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Todolist>>> GetTodolists()
+    public async Task<ActionResult<IEnumerable<Todolist>>> GetTodolists(DateTime? date)
     {
         if (_context.Todolists == null)
         {
             return NotFound();
         }
-        return await _context.Todolists.ToListAsync();
+
+        IQueryable<Todolist> query = _context.Todolists;
+
+        if (date.HasValue)
+        {
+            // Assuming you want to filter Todolists where the CreatedAt, UpdatedAt, or ExpiredAt matches the date
+            // Adjust the filtering logic based on your specific requirements
+            query = query.Where(t => (t.ExpiredAt  == date.Value.Date));
+        }
+
+        return await query.ToListAsync();
     }
 
     [HttpGet("project/{projectId}")]
@@ -65,25 +75,20 @@ public class TodolistsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTodolist(Guid id, TodoDTO todolist)
+    public async Task<IActionResult> PutTodolist(Guid id, TodoUpdateDTO todolist)
     {
         var todo = await _context.Todolists.FindAsync(id);
-        Todolist putTodo = new Todolist
-        {
-            Id = id,
-            Title = todolist.Title,
-            Description = todolist.Description,
-            Status = 1,
-            CreatedAt = todo.CreatedAt,
-            UpdatedAt = DateTime.Now,
-            UserId = todo.UserId,
-            ProjectId = todo.ProjectId,
-            StatusName = _context.Kanbans
-                .Where(k => k.ProjectId == todo.ProjectId && k.Status == 1)
-                .FirstOrDefault().ToString(),
-            ExpiredAt = todolist.ExpiredAt
-        };
-        _context.Entry(todolist).State = EntityState.Modified;
+
+        todo.Title = todolist.Title;
+        todo.Description = todolist.Description;
+        todo.CreatedAt = todo.CreatedAt;
+        todo.UpdatedAt = DateTime.Now;
+        todo.UserId = todo.UserId;
+        todo.ProjectId = todo.ProjectId;
+        todo.ExpiredAt = todolist.ExpiredAt;
+        todo.Status = todolist.Status;
+        todo.StatusName = todolist.StatusName;
+
 
         try
         {
@@ -183,7 +188,7 @@ public class TodolistsController : ControllerBase
     //}
     #endregion
 
-    [HttpPost("{projectId}/AddTodolist")]
+    [HttpPost("{projectId}")]
     public async Task<ActionResult<Todolist>> AddTodolist(Guid projectId, TodoDTO todolist)
     {
         // Check if the project exists
@@ -221,7 +226,7 @@ public class TodolistsController : ControllerBase
         _context.Todolists.Add(newTodo);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(AddTodolist), new { id = newTodo.Id }, newTodo);
+        return Ok( newTodo);
     }
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTodolist(Guid id)
